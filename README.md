@@ -72,3 +72,9 @@ The application will be available at `http://localhost:5173`
 ## 📄 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+-------------
+![image](https://github.com/user-attachments/assets/cbda0d1d-426c-4533-a638-162849e71fd9)
+![image](https://github.com/user-attachments/assets/4a1fff0f-07c0-4de0-b718-9b84b7a566be)
+
+
