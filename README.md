@@ -36,8 +36,8 @@ src/
 
 1. Clone the repository:
 ```bash
-git clone [repository-url]
-cd trello-mini-fe
+git clone https://github.com/DtPhat/taskboard-fe.git
+cd taskboard-fe
 ```
 
 2. Install dependencies:
