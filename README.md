@@ -1,4 +1,5 @@
-# Trello Mini Frontend
+# TaskBoard Frontend
+A modern task management application with github integration.
 
 ## 📁 Project Structure
 
