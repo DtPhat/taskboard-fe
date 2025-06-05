@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
 import { useAuth } from '../lib/auth-context';
 import { useNavigate } from 'react-router-dom';
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export function SignIn() {
   const [email, setEmail] = useState('');
@@ -25,84 +30,62 @@ export function SignIn() {
       await verifySignin(email, verificationCode);
       navigate('/boards');
     } catch (err) {
-      // Error is handled by the auth context
+      console.log(err);
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Sign in to your account
-          </h2>
-        </div>
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-            <span className="block sm:inline">{error}</span>
-          </div>
-        )}
-        {step === 'email' ? (
-          <form className="mt-8 space-y-6" onSubmit={handleEmailSubmit}>
-            <div className="rounded-md shadow-sm -space-y-px">
-              <div>
-                <label htmlFor="email-address" className="sr-only">
-                  Email address
-                </label>
-                <input
-                  id="email-address"
-                  name="email"
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold text-center">Sign in to your account</CardTitle>
+          <CardDescription className="text-center">
+            {step === 'email' ? 'Enter your email to receive a verification code' : 'Enter the verification code sent to your email'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          {step === 'email' ? (
+            <form onSubmit={handleEmailSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email address</Label>
+                <Input
+                  id="email"
                   type="email"
-                  autoComplete="email"
-                  required
-                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                  placeholder="Email address"
+                  placeholder="Enter your email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  required
                 />
               </div>
-            </div>
-
-            <div>
-              <button
-                type="submit"
-                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
+              <Button type="submit" className="w-full">
                 Send verification code
-              </button>
-            </div>
-          </form>
-        ) : (
-          <form className="mt-8 space-y-6" onSubmit={handleVerificationSubmit}>
-            <div className="rounded-md shadow-sm -space-y-px">
-              <div>
-                <label htmlFor="verification-code" className="sr-only">
-                  Verification code
-                </label>
-                <input
+              </Button>
+            </form>
+          ) : (
+            <form onSubmit={handleVerificationSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="verification-code">Verification code</Label>
+                <Input
                   id="verification-code"
-                  name="verification-code"
                   type="text"
-                  required
-                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                   placeholder="Enter verification code"
                   value={verificationCode}
                   onChange={(e) => setVerificationCode(e.target.value)}
+                  required
                 />
               </div>
-            </div>
-
-            <div>
-              <button
-                type="submit"
-                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
+              <Button type="submit" className="w-full">
                 Verify and sign in
-              </button>
-            </div>
-          </form>
-        )}
-      </div>
+              </Button>
+            </form>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 } 

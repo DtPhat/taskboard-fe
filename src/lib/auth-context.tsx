@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { authAPI } from './api';
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { authService } from "../services/authService";
 
 interface User {
   id: string;
@@ -8,104 +9,85 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  loading: boolean;
-  error: string | null;
-  signup: (email: string) => Promise<void>;
-  verifySignup: (email: string, code: string) => Promise<void>;
+  isAuthenticated: boolean;
   signin: (email: string) => Promise<void>;
   verifySignin: (email: string, code: string) => Promise<void>;
   signout: () => void;
-  githubSignin: () => Promise<void>;
+  error: string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(() => {
+    const storedUser = localStorage.getItem("user");
+    return storedUser ? JSON.parse(storedUser) : null;
+  });
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check if user is already logged in
-    const token = localStorage.getItem('accessToken');
-    if (token) {
-      // TODO: Verify token and get user info
-      setLoading(false);
-    } else {
-      setLoading(false);
+    // Check if user is already authenticated
+    const accessToken = localStorage.getItem("accessToken");
+    const storedUser = localStorage.getItem("user");
+    
+    if (accessToken && storedUser) {
+      try {
+        const userData = JSON.parse(storedUser);
+        setUser(userData);
+      } catch (error) {
+        console.error('Error parsing stored user data:', error);
+        // Clear invalid data
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("user");
+        setUser(null);
+      }
     }
   }, []);
 
-  const signup = async (email: string) => {
-    try {
-      setError(null);
-      await authAPI.signup(email);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred during signup');
-      throw err;
-    }
-  };
+  const signinMutation = useMutation({
+    mutationFn: authService.signin,
+    onError: (err) => {
+      setError("Failed to send verification code");
+    },
+  });
 
-  const verifySignup = async (email: string, code: string) => {
-    try {
+  const verifySigninMutation = useMutation({
+    mutationFn: ({ email, code }: { email: string; code: string }) =>
+      authService.verifySignin(email, code),
+    onSuccess: (data) => {
+      localStorage.setItem("accessToken", data.accessToken);
+      localStorage.setItem("user", JSON.stringify(data.user));
+      setUser(data.user);
       setError(null);
-      const response = await authAPI.verifySignup(email, code);
-      localStorage.setItem('accessToken', response.accessToken);
-      setUser(response.user);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred during verification');
-      throw err;
-    }
-  };
+    },
+    onError: () => {
+      setError("Invalid verification code");
+    },
+  });
 
   const signin = async (email: string) => {
-    try {
-      setError(null);
-      await authAPI.signin(email);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred during signin');
-      throw err;
-    }
+    setError(null);
+    await signinMutation.mutateAsync(email);
   };
 
   const verifySignin = async (email: string, code: string) => {
-    try {
-      setError(null);
-      const response = await authAPI.verifySignin(email, code);
-      localStorage.setItem('accessToken', response.accessToken);
-      setUser(response.user);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred during verification');
-      throw err;
-    }
+    setError(null);
+    await verifySigninMutation.mutateAsync({ email, code });
   };
 
   const signout = () => {
-    localStorage.removeItem('accessToken');
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("user");
     setUser(null);
-  };
-
-  const githubSignin = async () => {
-    try {
-      setError(null);
-      const response = await authAPI.githubAuth();
-      window.location.href = response.url;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred during GitHub signin');
-      throw err;
-    }
   };
 
   const value = {
     user,
-    loading,
-    error,
-    signup,
-    verifySignup,
+    isAuthenticated: !!user,
     signin,
     verifySignin,
     signout,
-    githubSignin,
+    error,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -114,7 +96,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
-} 
+}
