@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAuth } from '@/contexts/lib/auth-context';
+import { useAuth } from '@/contexts/auth-context';
 
 interface InviteMemberDialogProps {
   boardId: string;
@@ -28,9 +28,9 @@ export function InviteMemberDialog({ boardId }: InviteMemberDialogProps) {
   const inviteMemberMutation = useMutation({
     mutationFn: (email: string) =>
       boardService.inviteMember(boardId, {
-        invite_id: crypto.randomUUID(),
+        // invite_id: crypto.randomUUID(),
         board_owner_id: user?.id || '',
-        member_id: '', // This will be set by the backend
+        member_id: user?.id, // This will be set by the backend
         email_member: email,
         status: 'pending',
       }),

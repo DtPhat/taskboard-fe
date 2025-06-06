@@ -11,7 +11,8 @@ export interface Member {
   id: string;
   email: string;
   createdAt: string;
-  name: "Doan Tien Phat";
+  name: string;
+  avatar: string;
 }
 
 export interface CreateBoardDto {
@@ -25,9 +26,9 @@ export interface UpdateBoardDto {
 }
 
 export interface AcceptInviteDto {
-  invite_id: string;
-  board_id: string;
-  member_id: string;
+  inviteId: string;
+  boardId: string;
+  // member_id: string;
   status: "accepted" | "declined";
 }
 
@@ -65,7 +66,6 @@ export const boardService = {
   inviteMember: async (
     boardId: string,
     data: {
-      invite_id: string;
       board_owner_id: string;
       member_id: string;
       email_member?: string;
@@ -80,9 +80,11 @@ export const boardService = {
   },
 
   // Accept board invitation
-  acceptInvite: async (data: AcceptInviteDto): Promise<{ success: boolean }> => {
+  acceptInvite: async (
+    data: AcceptInviteDto
+  ): Promise<{ success: boolean }> => {
     const response = await api.post<{ success: boolean }>(
-      `/boards/${data.board_id}/invite/accept`,
+      `/boards/${data.boardId}/invite/accept`,
       data
     );
     return response.data;

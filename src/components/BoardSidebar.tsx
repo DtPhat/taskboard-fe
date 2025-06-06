@@ -18,7 +18,6 @@ import { MemberList } from "./MemberList";
 import { Separator } from "./ui/separator";
 import { Card } from "./ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { NotificationBell } from "./NotificationBell";
 
 export function BoardSidebar({
   ...props
@@ -68,7 +67,7 @@ export function BoardSidebar({
                 <Card key={member.id} className="p-2 hover:bg-gray-50 transition-colors">
                   <div className="flex items-center gap-2">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={"https://avatars.githubusercontent.com/u/124599?v=4"} alt={member.name} />
+                      <AvatarImage src={member.avatar} alt={member.name} />
                       <AvatarFallback>{member.name.slice(0, 2).toUpperCase()}</AvatarFallback>
                     </Avatar>
                     <div>

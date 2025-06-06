@@ -1,22 +1,10 @@
-import React, { useEffect } from "react";
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-} from "react-router-dom";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
-import { AuthProvider } from "./contexts/lib/auth-context";
-import { ProtectedRoute } from "./components/ProtectedRoute";
-import { Navigation } from "./components/Navigation";
-import { SignIn } from "./pages/SignIn";
-import { SignUp } from "./pages/SignUp";
-import { BoardList } from "./pages/BoardList";
-import { BoardDetail } from "./pages/BoardDetail";
-import { useAuth } from "./contexts/lib/auth-context";
-import BoardLayout from "./components/BoardLayout";
-import { notificationService } from '@/services/notificationService';
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import React from "react";
+import { Navigate, BrowserRouter as Router } from "react-router-dom";
+import { AuthProvider, useAuth } from "./contexts/auth-context";
+import { SocketProvider } from "./contexts/socket-context";
+import { AppRoutes } from "./routes";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -26,12 +14,6 @@ const queryClient = new QueryClient({
     },
   },
 });
-
-function PrivateRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuth();
-  console.log(isAuthenticated);
-  return isAuthenticated ? <>{children}</> : <Navigate to="/signin" />;
-}
 
 function App() {
   // useEffect(() => {
@@ -50,32 +32,12 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <Router>
-          <div className="bg-gray-50">
-            <Navigation />
-            <main className="">
-              <div className="sm:px-1 lg:px-1">
-                <Routes>
-                  <Route path="/signin" element={<SignIn />} />
-                  <Route path="/signup" element={<SignUp />} />
-                  <Route
-                    path="/boards"
-                    element={
-                      <PrivateRoute>
-                        <BoardLayout />
-                      </PrivateRoute>
-                    }
-                  >
-                    <Route index element={<BoardList />} />
-                    <Route path=":boardId" element={<BoardDetail />} />
-                  </Route>
-                  <Route path="/" element={<Navigate to="/boards" />} />
-                </Routes>
-              </div>
-            </main>
-          </div>
-          <Toaster />
-        </Router>
+        <SocketProvider>
+          <Router>
+            <AppRoutes />
+          </Router>
+        </SocketProvider>
+        <Toaster />
       </AuthProvider>
     </QueryClientProvider>
   );

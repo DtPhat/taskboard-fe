@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { authService } from "../../services/authService";
+import { authService } from "../services/authService";
 
 interface User {
   id: string;
