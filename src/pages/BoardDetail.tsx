@@ -1,216 +1,237 @@
-import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, Users, Settings } from "lucide-react";
+import React from "react";
+import { useParams } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { boardService } from "../services/boardService";
+import { cardService, CreateCardDto, Card } from "../services/cardService";
+import { taskService, Task, UpdateTaskDto } from "../services/taskService";
 import { Button } from "@/components/ui/button";
-import { KanbanColumn } from "@/components/KanbanColumn";
-import { CreateCardDialog } from "@/components/CreateCardDialog";
-import { DragDropContext, DropResult } from "@hello-pangea/dnd";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/components/ui/use-toast";
+import { Column } from "../components/Column";
+import { DragDropContext, DropResult, Droppable } from "react-beautiful-dnd";
 
-// Mock data for cards
-const mockColumns = [
-  {
-    id: "organize-me",
-    title: "Organize Me",
-    cards: [
-      {
-        id: "1",
-        title: "Order printer paper",
-        description: "Need to order new printer paper for the office",
-        tasks: [],
-        members: [],
-        priority: "high" as const,
-        dueDate: null
-      },
-      {
-        id: "2", 
-        title: "Reconcile books",
-        description: "Monthly financial reconciliation",
-        tasks: [
-          { id: "t1", title: "Review transactions", completed: false },
-          { id: "t2", title: "Update spreadsheet", completed: true }
-        ],
-        members: [],
-        priority: "medium" as const,
-        dueDate: null
-      },
-      {
-        id: "3",
-        title: "Review contract internally", 
-        description: "Legal review of new vendor contract",
-        tasks: [],
-        members: [],
-        priority: "medium" as const,
-        dueDate: "Sep 24"
-      },
-      {
-        id: "4",
-        title: "Call Kevin",
-        description: "Follow up on project status",
-        tasks: [],
-        members: [],
-        priority: "low" as const,
-        dueDate: null
-      }
-    ]
-  },
-  {
-    id: "to-do",
-    title: "To Do", 
-    cards: []
-  },
-  {
-    id: "on-hold",
-    title: "On Hold",
-    cards: [
-      {
-        id: "5",
-        title: "Move ABC project forward",
-        description: "Continue development on ABC project",
-        tasks: [
-          { id: "t3", title: "Design review", completed: false },
-          { id: "t4", title: "Code implementation", completed: false }
-        ],
-        members: [],
-        priority: "high" as const, 
-        dueDate: null
-      }
-    ]
-  }
-];
+export function BoardDetail() {
+  const { boardId } = useParams<{ boardId: string }>();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [isCreateCardDialogOpen, setIsCreateCardDialogOpen] =
+    React.useState(false);
+  const [newCard, setNewCard] = React.useState<CreateCardDto>({
+    name: "",
+    description: "",
+  });
 
-const BoardDetail = () => {
-  const { boardId } = useParams();
-  const navigate = useNavigate();
-  const [columns, setColumns] = useState(mockColumns);
-  const [isCreateCardDialogOpen, setIsCreateCardDialogOpen] = useState(false);
-  const [selectedColumnId, setSelectedColumnId] = useState<string>("");
+  const { data: board, isLoading: isBoardLoading } = useQuery({
+    queryKey: ["board", boardId],
+    queryFn: () => boardService.getBoardById(boardId!),
+    enabled: !!boardId,
+  });
 
-  const handleCreateCard = (cardData: { title: string; description: string }, columnId: string) => {
-    const newCard = {
-      id: Date.now().toString(),
-      ...cardData,
-      tasks: [],
-      members: [],
-      priority: "medium" as const,
-      dueDate: null
-    };
+  const { data: cards, isLoading: isCardsLoading } = useQuery({
+    queryKey: ["cards", boardId],
+    queryFn: () => cardService.getAllCards(boardId!),
+    enabled: !!boardId,
+  });
 
-    setColumns(prevColumns => 
-      prevColumns.map(column => 
-        column.id === columnId 
-          ? { ...column, cards: [...column.cards, newCard] }
-          : column
-      )
-    );
-    setIsCreateCardDialogOpen(false);
-  };
+  // Fetch all tasks for each card using React Query
+  const { data: allTasks = [], isLoading: isTasksLoading } = useQuery({
+    queryKey: ["tasks", boardId],
+    queryFn: async () => {
+      if (!cards?.length) return [];
+      console.log("Fetching tasks for cards:", cards);
+      const tasksPromises = cards.map((card) =>
+        taskService.getAllTasks(boardId!, card.id).catch((error) => {
+          console.error(`Error fetching tasks for card ${card.id}:`, error);
+          return [];
+        })
+      );
+      const tasksResults = await Promise.all(tasksPromises);
+      const combinedTasks = tasksResults.flat();
+      console.log("Combined tasks:", combinedTasks);
+      return combinedTasks;
+    },
+    enabled: !!boardId && !!cards?.length,
+  });
 
-  const handleDragEnd = (result: DropResult) => {
-    const { destination, source, draggableId } = result;
-
-    if (!destination) return;
-    if (destination.droppableId === source.droppableId && destination.index === source.index) return;
-
-    const sourceColumn = columns.find(col => col.id === source.droppableId);
-    const destColumn = columns.find(col => col.id === destination.droppableId);
-    
-    if (!sourceColumn || !destColumn) return;
-
-    const draggedCard = sourceColumn.cards.find(card => card.id === draggableId);
-    if (!draggedCard) return;
-
-    setColumns(prevColumns => {
-      return prevColumns.map(column => {
-        if (column.id === source.droppableId) {
-          // Remove card from source
-          return {
-            ...column,
-            cards: column.cards.filter(card => card.id !== draggableId)
-          };
-        } else if (column.id === destination.droppableId) {
-          // Add card to destination
-          const newCards = [...column.cards];
-          newCards.splice(destination.index, 0, draggedCard);
-          return {
-            ...column,
-            cards: newCards
-          };
-        }
-        return column;
+  const createCardMutation = useMutation({
+    mutationFn: (data: CreateCardDto) => cardService.createCard(boardId!, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["cards", boardId] });
+      setIsCreateCardDialogOpen(false);
+      setNewCard({ name: "", description: "" });
+      toast({
+        title: "Success",
+        description: "Card created successfully",
       });
-    });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to create card",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleCreateCard = (e: React.FormEvent) => {
+    e.preventDefault();
+    createCardMutation.mutate(newCard);
   };
 
-  const openCreateCardDialog = (columnId: string) => {
-    setSelectedColumnId(columnId);
-    setIsCreateCardDialogOpen(true);
+  const handleDragEnd = async (result: DropResult) => {
+    const { source, destination, draggableId } = result;
+
+    // Dropped outside a droppable area or back in the same spot
+    if (
+      !destination ||
+      (source.droppableId === destination.droppableId &&
+        source.index === destination.index)
+    ) {
+      return;
+    }
+
+    const sourceCardId = source.droppableId;
+    const destCardId = destination.droppableId;
+    const draggedTask = allTasks.find((task) => task.id === draggableId);
+    console.log(sourceCardId, destCardId, draggedTask);
+    if (!draggedTask) return;
+
+    try {
+      // Update the task's cardId in the backend
+      await taskService.updateTask(boardId!, sourceCardId, draggableId, {
+        id: draggableId,
+        // ownerId: draggedTask.ownerId || "",
+        newCardId: destCardId,
+        title: draggedTask.title,
+        description: draggedTask.description,
+        status: draggedTask.status,
+      } as UpdateTaskDto);
+
+      // Optimistically update the UI
+      const updatedTasks = allTasks.map((task) =>
+        task.id === draggableId ? { ...task, cardId: destCardId } : task
+      );
+
+      // Update the cache
+      queryClient.setQueryData(["tasks", boardId], updatedTasks);
+
+      // Refetch to ensure consistency
+      queryClient.invalidateQueries({ queryKey: ["tasks", boardId] });
+    } catch (error) {
+      console.error("Failed to move task:", error);
+      toast({
+        title: "Error",
+        description: "Failed to move task",
+        variant: "destructive",
+      });
+    }
   };
+
+  // Group tasks by cardId for rendering
+  const tasksByCardId = React.useMemo(() => {
+    console.log("Grouping tasks:", allTasks);
+    const grouped: Record<string, Task[]> = {};
+    allTasks.forEach((task) => {
+      if (!grouped[task.cardId]) {
+        grouped[task.cardId] = [];
+      }
+      grouped[task.cardId].push(task);
+    });
+    console.log("Grouped tasks:", grouped);
+    return grouped;
+  }, [allTasks]);
+
+  if (isBoardLoading || isCardsLoading || isTasksLoading) {
+    return <div className="p-2">Loading board...</div>;
+  }
+
+  if (!board || !cards) {
+    return <div>Board or cards not found</div>;
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-400 via-pink-300 to-orange-300">
-      <div className="container mx-auto px-6 py-8">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={() => navigate("/")}
-              className="text-white hover:bg-white/20"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Boards
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold text-white">Project Board</h1>
-              <p className="text-white/80">Manage your project tasks and workflow</p>
+    <div className="flex min-h-screen bg-white">
+      <div className="flex-1 flex flex-col">
+        <div className="flex-1 overflow-x-auto p-8">
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <div className="flex flex-wrap gap-8">
+              {cards?.map((card) => (
+                <Droppable droppableId={card.id} key={card.id} type="task">
+                  {(provided, snapshot) => (
+                    <Column
+                      key={card.id}
+                      boardId={boardId!}
+                      cardId={card.id}
+                      title={card.name}
+                      tasks={tasksByCardId[card.id] || []}
+                      provided={provided}
+                      snapshot={snapshot}
+                    />
+                  )}
+                </Droppable>
+              ))}
+              <div className="min-w-80">
+                <Dialog
+                  open={isCreateCardDialogOpen}
+                  onOpenChange={setIsCreateCardDialogOpen}
+                >
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full h-16 border-dashed bg-gray-200"
+                    >
+                      + Add another list
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Create New List</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleCreateCard} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="card-name">List Name</Label>
+                        <Input
+                          id="card-name"
+                          value={newCard.name}
+                          onChange={(e) =>
+                            setNewCard({ ...newCard, name: e.target.value })
+                          }
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="card-description">Description</Label>
+                        <Input
+                          id="card-description"
+                          value={newCard.description}
+                          onChange={(e) =>
+                            setNewCard({
+                              ...newCard,
+                              description: e.target.value,
+                            })
+                          }
+                          required
+                        />
+                      </div>
+                      <Button type="submit" className="w-full">
+                        Create List
+                      </Button>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" className="text-white hover:bg-white/20">
-              <Users className="w-4 h-4 mr-2" />
-              Members
-            </Button>
-            <Button variant="ghost" size="sm" className="text-white hover:bg-white/20">
-              <Settings className="w-4 h-4 mr-2" />
-              Settings
-            </Button>
-          </div>
+          </DragDropContext>
         </div>
-
-        {/* Kanban Board */}
-        <DragDropContext onDragEnd={handleDragEnd}>
-          <div className="flex gap-6 overflow-x-auto pb-4">
-            {columns.map((column) => (
-              <KanbanColumn 
-                key={column.id}
-                column={column}
-                onAddCard={() => openCreateCardDialog(column.id)}
-              />
-            ))}
-            
-            {/* Add New Column */}
-            <div className="min-w-[300px] bg-white/20 backdrop-blur-sm rounded-xl p-4 border-2 border-dashed border-white/40">
-              <Button 
-                variant="ghost" 
-                className="w-full h-full min-h-[100px] text-white/70 hover:bg-white/20 border-none"
-              >
-                <Plus className="w-6 h-6 mr-2" />
-                Add another card
-              </Button>
-            </div>
-          </div>
-        </DragDropContext>
-
-        <CreateCardDialog 
-          open={isCreateCardDialogOpen}
-          onOpenChange={setIsCreateCardDialogOpen}
-          onCreateCard={(cardData) => handleCreateCard(cardData, selectedColumnId)}
-        />
       </div>
     </div>
   );
-};
-
-export default BoardDetail;
+}

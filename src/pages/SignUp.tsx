@@ -1,18 +1,24 @@
 import React, { useState } from 'react';
-import { useAuth } from '../lib/auth-context';
+import { useAuth } from '../contexts/lib/auth-context';
 import { useNavigate } from 'react-router-dom';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export function SignUp() {
   const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
+  const [avatar, setAvatar] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
-  const [step, setStep] = useState<'email' | 'verification'>('email');
-  const { signup, verifySignup, error } = useAuth();
+  const [step, setStep] = useState<'details' | 'verification'>('details');
+  const { signup, verifySignin, error } = useAuth();
   const navigate = useNavigate();
 
-  const handleEmailSubmit = async (e: React.FormEvent) => {
+  const handleDetailsSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await signup(email);
+      await signup({ email, name, avatar });
       setStep('verification');
     } catch (err) {
       // Error is handled by the auth context
@@ -22,7 +28,7 @@ export function SignUp() {
   const handleVerificationSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await verifySignup(email, verificationCode);
+      await verifySignin(email, verificationCode);
       navigate('/boards');
     } catch (err) {
       // Error is handled by the auth context
@@ -42,49 +48,62 @@ export function SignUp() {
             <span className="block sm:inline">{error}</span>
           </div>
         )}
-        {step === 'email' ? (
-          <form className="mt-8 space-y-6" onSubmit={handleEmailSubmit}>
-            <div className="rounded-md shadow-sm -space-y-px">
+        {step === 'details' ? (
+          <form className="mt-8 space-y-6" onSubmit={handleDetailsSubmit}>
+            <div className="space-y-4">
+              <div className="flex flex-col items-center space-y-4">
+                <Avatar className="h-24 w-24">
+                  <AvatarImage src={avatar} alt={name} />
+                  <AvatarFallback>{name.slice(0, 2).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <div className="w-full">
+                  <Label htmlFor="avatar">Avatar URL (optional)</Label>
+                  <Input
+                    id="avatar"
+                    type="url"
+                    placeholder="https://example.com/avatar.jpg"
+                    value={avatar}
+                    onChange={(e) => setAvatar(e.target.value)}
+                  />
+                </div>
+              </div>
               <div>
-                <label htmlFor="email-address" className="sr-only">
-                  Email address
-                </label>
-                <input
-                  id="email-address"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
+                <Label htmlFor="name">Full Name</Label>
+                <Input
+                  id="name"
+                  type="text"
                   required
-                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                  placeholder="Email address"
+                  placeholder="John Doe"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="email">Email address</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  required
+                  placeholder="john@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
             </div>
 
-            <div>
-              <button
-                type="submit"
-                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                Send verification code
-              </button>
-            </div>
+            <Button type="submit" className="w-full">
+              Sign Up
+            </Button>
           </form>
         ) : (
           <form className="mt-8 space-y-6" onSubmit={handleVerificationSubmit}>
-            <div className="rounded-md shadow-sm -space-y-px">
+            <div className="space-y-4">
               <div>
-                <label htmlFor="verification-code" className="sr-only">
-                  Verification code
-                </label>
-                <input
+                <Label htmlFor="verification-code">Verification code</Label>
+                <Input
                   id="verification-code"
-                  name="verification-code"
                   type="text"
                   required
-                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                   placeholder="Enter verification code"
                   value={verificationCode}
                   onChange={(e) => setVerificationCode(e.target.value)}
@@ -92,14 +111,9 @@ export function SignUp() {
               </div>
             </div>
 
-            <div>
-              <button
-                type="submit"
-                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                Verify and create account
-              </button>
-            </div>
+            <Button type="submit" className="w-full">
+              Verify and create account
+            </Button>
           </form>
         )}
       </div>

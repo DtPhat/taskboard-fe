@@ -17,8 +17,11 @@ export interface CreateTaskDto {
 
 export interface UpdateTaskDto {
   id: string;
-  card_owner_id: string;
-  card_id: string;
+  // ownerId: string;
+  newCardId?: string;
+  title: string;
+  description: string;
+  status: string;
 }
 
 export interface GitHubAttachment {

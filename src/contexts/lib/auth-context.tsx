@@ -1,15 +1,24 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { authService } from "../services/authService";
+import { authService } from "../../services/authService";
 
 interface User {
   id: string;
   email: string;
+  name: string;
+  avatar?: string;
+}
+
+interface SignUpData {
+  email: string;
+  name: string;
+  avatar?: string;
 }
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
+  signup: (data: SignUpData) => Promise<void>;
   signin: (email: string) => Promise<void>;
   verifySignin: (email: string, code: string) => Promise<void>;
   signout: () => void;
@@ -29,13 +38,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Check if user is already authenticated
     const accessToken = localStorage.getItem("accessToken");
     const storedUser = localStorage.getItem("user");
-    
+
     if (accessToken && storedUser) {
       try {
         const userData = JSON.parse(storedUser);
         setUser(userData);
       } catch (error) {
-        console.error('Error parsing stored user data:', error);
+        console.error("Error parsing stored user data:", error);
         // Clear invalid data
         localStorage.removeItem("accessToken");
         localStorage.removeItem("user");
@@ -43,6 +52,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
   }, []);
+
+  const signupMutation = useMutation({
+    mutationFn: (data: SignUpData) => authService.signup(data),
+    onError: (err) => {
+      setError("Failed to send verification code");
+    },
+  });
 
   const signinMutation = useMutation({
     mutationFn: authService.signin,
@@ -65,6 +81,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     },
   });
 
+  const signup = async (data: SignUpData) => {
+    setError(null);
+    await signupMutation.mutateAsync(data);
+  };
+
   const signin = async (email: string) => {
     setError(null);
     await signinMutation.mutateAsync(email);
@@ -84,6 +105,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const value = {
     user,
     isAuthenticated: !!user,
+    signup,
     signin,
     verifySignin,
     signout,

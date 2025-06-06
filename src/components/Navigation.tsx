@@ -1,10 +1,22 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../lib/auth-context';
+import { useAuth } from '../contexts/lib/auth-context';
+import { NotificationBell } from './NotificationBell';
+import { notificationService } from '@/services/notificationService';
 
 export function Navigation() {
   const { user, signout } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (user?.id) {
+      notificationService.connect(user.id);
+    }
+
+    return () => {
+      notificationService.disconnect();
+    };
+  }, [user?.id]);
 
   const handleSignOut = () => {
     signout();
@@ -12,8 +24,8 @@ export function Navigation() {
   };
 
   return (
-    <nav className="bg-white shadow">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <nav className="bg-white shadow sticky z-50 top-0">
+      <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
@@ -32,39 +44,42 @@ export function Navigation() {
           </div>
           <div className="hidden sm:ml-6 sm:flex sm:items-center">
             {user ? (
-              <div className="ml-3 relative">
-                <div>
-                  <button
-                    type="button"
-                    className="bg-white rounded-full flex text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                    id="user-menu-button"
-                    aria-expanded="false"
-                    aria-haspopup="true"
-                  >
-                    <span className="sr-only">Open user menu</span>
-                    <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center">
-                      <span className="text-indigo-600 font-medium">
-                        {user.email.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                  </button>
-                </div>
-                <div
-                  className="hidden origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none"
-                  role="menu"
-                  aria-orientation="vertical"
-                  aria-labelledby="user-menu-button"
-                  tabIndex={-1}
-                >
-                  <div className="px-4 py-2 text-sm text-gray-700">{user.email}</div>
-                  <button
-                    onClick={handleSignOut}
-                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    role="menuitem"
+              <div className="flex items-center space-x-4">
+                <NotificationBell />
+                <div className="ml-3 relative">
+                  <div>
+                    <button
+                      type="button"
+                      className="bg-white rounded-full flex text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                      id="user-menu-button"
+                      aria-expanded="false"
+                      aria-haspopup="true"
+                    >
+                      <span className="sr-only">Open user menu</span>
+                      <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center">
+                        <span className="text-indigo-600 font-medium">
+                          {user.email.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                    </button>
+                  </div>
+                  <div
+                    className="hidden origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none"
+                    role="menu"
+                    aria-orientation="vertical"
+                    aria-labelledby="user-menu-button"
                     tabIndex={-1}
                   >
-                    Sign out
-                  </button>
+                    <div className="px-4 py-2 text-sm text-gray-700">{user.email}</div>
+                    <button
+                      onClick={handleSignOut}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      role="menuitem"
+                      tabIndex={-1}
+                    >
+                      Sign out
+                    </button>
+                  </div>
                 </div>
               </div>
             ) : (

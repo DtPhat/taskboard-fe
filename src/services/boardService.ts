@@ -1,9 +1,17 @@
-import { api } from './api';
+import { api } from "./api";
 
 export interface Board {
   id: string;
   name: string;
   description: string;
+  members: Member[];
+}
+
+export interface Member {
+  id: string;
+  email: string;
+  createdAt: string;
+  name: "Doan Tien Phat";
 }
 
 export interface CreateBoardDto {
@@ -16,16 +24,23 @@ export interface UpdateBoardDto {
   description: string;
 }
 
+export interface AcceptInviteDto {
+  invite_id: string;
+  board_id: string;
+  member_id: string;
+  status: "accepted" | "declined";
+}
+
 export const boardService = {
   // Create a new board
   createBoard: async (data: CreateBoardDto): Promise<Board> => {
-    const response = await api.post<Board>('/boards', data);
+    const response = await api.post<Board>("/boards", data);
     return response.data;
   },
 
   // Get all boards
   getAllBoards: async (): Promise<Board[]> => {
-    const response = await api.get<Board[]>('/boards');
+    const response = await api.get<Board[]>("/boards");
     return response.data;
   },
 
@@ -47,14 +62,29 @@ export const boardService = {
   },
 
   // Invite member to board
-  inviteMember: async (boardId: string, data: {
-    invite_id: string;
-    board_owner_id: string;
-    member_id: string;
-    email_member?: string;
-    status: 'pending' | 'accepted' | 'declined';
-  }): Promise<{ success: boolean }> => {
-    const response = await api.post<{ success: boolean }>(`/boards/${boardId}/invite`, data);
+  inviteMember: async (
+    boardId: string,
+    data: {
+      invite_id: string;
+      board_owner_id: string;
+      member_id: string;
+      email_member?: string;
+      status: "pending" | "accepted" | "declined";
+    }
+  ): Promise<{ success: boolean }> => {
+    const response = await api.post<{ success: boolean }>(
+      `/boards/${boardId}/invite`,
+      data
+    );
     return response.data;
   },
-}; 
+
+  // Accept board invitation
+  acceptInvite: async (data: AcceptInviteDto): Promise<{ success: boolean }> => {
+    const response = await api.post<{ success: boolean }>(
+      `/boards/${data.board_id}/invite/accept`,
+      data
+    );
+    return response.data;
+  },
+};
