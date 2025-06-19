@@ -23,9 +23,9 @@ export function SocketProvider({ children }: SocketProviderProps) {
   const [isConnected, setIsConnected] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const storedUser = localStorage.getItem("user");
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
     if (!storedUser) return;
     const userData = JSON.parse(storedUser);
     if (!userData?.id) return;
@@ -98,7 +98,7 @@ export function SocketProvider({ children }: SocketProviderProps) {
     return () => {
       socketInstance.disconnect();
     };
-  }, []);
+  }, [storedUser]);
 
   const joinBoard = (boardId: string) => {
     if (socket) {

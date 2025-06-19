@@ -20,7 +20,6 @@ export function SignIn() {
       await signin(email);
       setStep('verification');
     } catch (err) {
-      // Error is handled by the auth context
     }
   };
 

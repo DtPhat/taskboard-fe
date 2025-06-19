@@ -7,6 +7,15 @@ export interface Task {
   description: string;
   status: string;
   ownerId?: string;
+  assignedMembers: Member[]
+}
+
+export interface Member {
+  id: string;
+  email: string;
+  createdAt: string;
+  name: string;
+  avatar: string;
 }
 
 export interface CreateTaskDto {

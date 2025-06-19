@@ -17,7 +17,7 @@ export function BoardHeader() {
   });
 
   if (isBoardLoading) {
-    return <div className="p-2">Loading board...</div>;
+    return <div className="p-2">Loading header...</div>;
   }
 
   return (

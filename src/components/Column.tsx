@@ -15,6 +15,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Textarea } from './ui/textarea';
 
 interface ColumnProps {
   boardId: string;
@@ -134,20 +135,21 @@ export function Column({ boardId, cardId, title, tasks, provided, snapshot }: Co
       </div>
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
         <DialogTrigger asChild>
-          <Button variant="outline" className="w-full border-dashed">+ Add a card</Button>
+          <Button variant="outline" className="w-full border-2 border-dashed">+ Add a task</Button>
         </DialogTrigger>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add Task</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleCreateTask} className="space-y-4">
+      
             <div className="space-y-2">
               <Label htmlFor="task-title">Title</Label>
               <Input id="task-title" value={newTask.title} onChange={e => setNewTask({ ...newTask, title: e.target.value })} required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="task-desc">Description</Label>
-              <Input id="task-desc" value={newTask.description} onChange={e => setNewTask({ ...newTask, description: e.target.value })} required />
+              <Textarea rows={4} id="task-desc" value={newTask.description} onChange={e => setNewTask({ ...newTask, description: e.target.value })} required />
             </div>
             <Button type="submit" className="w-full">Create</Button>
           </form>

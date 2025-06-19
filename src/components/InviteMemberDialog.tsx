@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/auth-context';
+import { User } from 'lucide-react';
 
 interface InviteMemberDialogProps {
   boardId: string;
@@ -63,6 +64,7 @@ export function InviteMemberDialog({ boardId }: InviteMemberDialogProps) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button>
+          <User />
           Invite member
         </Button>
       </DialogTrigger>

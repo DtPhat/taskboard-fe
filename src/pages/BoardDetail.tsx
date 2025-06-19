@@ -186,7 +186,7 @@ export function BoardDetail() {
                   <DialogTrigger asChild>
                     <Button
                       variant="outline"
-                      className="w-full h-16 border-dashed bg-gray-200"
+                      className="w-full h-16 border-dashed border-2"
                     >
                       + Add another list
                     </Button>

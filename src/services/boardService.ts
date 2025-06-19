@@ -32,10 +32,24 @@ export interface AcceptInviteDto {
   status: "accepted" | "declined";
 }
 
+export interface BoardMember {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  avatar: string;
+}
+
 export const boardService = {
   // Create a new board
   createBoard: async (data: CreateBoardDto): Promise<Board> => {
     const response = await api.post<Board>("/boards", data);
+    return response.data;
+  },
+
+  // Get all boards
+  getBoardMembers: async (boardId: string): Promise<BoardMember[]> => {
+    const response = await api.get<BoardMember[]>(`/boards/${boardId}/members`);
     return response.data;
   },
 

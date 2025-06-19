@@ -35,7 +35,7 @@ export const authService = {
 
   // Verify signin with code
   verifySignin: async (email: string, code: string): Promise<AuthResponse> => {
-    const response = await api.post<AuthResponse>('/auth/signin/verify', { email, code });
+    const response = await api.post<AuthResponse>('/auth/signin/verify', { email, verificationCode: code });
     return response.data;
   },
 }; 
